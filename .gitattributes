@@ -1,0 +1,2 @@
+# Vídeos grandes — use Git LFS antes do push (git lfs install)
+*.mp4 filter=lfs diff=lfs merge=lfs -text
