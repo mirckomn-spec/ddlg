@@ -7,7 +7,7 @@ export const musicPlayer = {
 } as const;
 
 export const backgroundVideo = {
-  src: "/abstract-waves.mp4",
+  src: "/ABSTRATO.mp4",
 } as const;
 
 export const sideDecorations = {
@@ -16,7 +16,7 @@ export const sideDecorations = {
     alt: "Decoração lateral esquerda",
   },
   right: {
-    src: "https://i.ibb.co/5h8LQSp0/Gemini-Generated-Image-rdlywtrdlywtrdly-Photoroom-1-Photoroom.png",
+    src: "https://i.ibb.co/fVNCYMQk/6uu65u56u565u6-Photoroom.png",
     alt: "Decoração lateral direita",
   },
 } as const;

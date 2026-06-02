@@ -1,6 +1,7 @@
 @media (pointer: fine) {
   body.custom-cursor-active,
-  body.custom-cursor-active *:not(.music-player):not(.music-player *) {
+  body.custom-cursor-active
+    *:not(.music-player):not(.music-player *):not(.entry-gate):not(.entry-gate *) {
     cursor: none !important;
   }
 

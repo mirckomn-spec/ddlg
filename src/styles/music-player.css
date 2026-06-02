@@ -1,5 +1,11 @@
 /* Player — referência Crystal Castles / tocando agora */
 
+.music-player--hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .music-player {
   --mp-bg: rgba(10, 10, 10, 0.92);
   --mp-border: rgba(255, 255, 255, 0.42);

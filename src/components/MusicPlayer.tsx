@@ -11,6 +11,16 @@ import {
 
 const DEFAULT_VOLUME = 0.425;
 const VOLUME_STORAGE_KEY = "ddlg-music-volume";
+const ENTER_EVENT = "ddlg-enter";
+
+type MusicPlayerProps = {
+  /** Escuta clique na tela de entrada (gesto do usuário) */
+  listenForEnter?: boolean;
+  /** Permite autoplay após entrar no site */
+  canAutoplay?: boolean;
+  /** Esconde o player até entrar */
+  hidden?: boolean;
+};
 
 function readStoredVolume(): number {
   try {
@@ -29,7 +39,11 @@ function formatTime(seconds: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-export default function MusicPlayer() {
+export default function MusicPlayer({
+  listenForEnter = false,
+  canAutoplay = true,
+  hidden = false,
+}: MusicPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const userPausedRef = useRef(false);
   const volumeRef = useRef(DEFAULT_VOLUME);
@@ -160,7 +174,9 @@ export default function MusicPlayer() {
         setDuration(audio.duration);
       }
       setStatus("ready");
-      void startAutoplay(audio);
+      if (canAutoplay) {
+        void startAutoplay(audio);
+      }
     };
 
     const onTimeUpdate = () => setCurrentTime(audio.currentTime);
@@ -192,15 +208,7 @@ export default function MusicPlayer() {
       onReady();
     }
 
-    const unlock = () => {
-      if (!userPausedRef.current && audio.paused) {
-        void playAudio(audio);
-      }
-    };
-    document.addEventListener("pointerdown", unlock, { once: true, capture: true });
-
     return () => {
-      document.removeEventListener("pointerdown", unlock, { capture: true });
       audio.removeEventListener("loadedmetadata", onReady);
       audio.removeEventListener("canplay", onCanPlay);
       audio.removeEventListener("canplaythrough", onCanPlay);
@@ -210,13 +218,36 @@ export default function MusicPlayer() {
       audio.removeEventListener("ended", onEnded);
       audio.removeEventListener("error", onError);
     };
-  }, [audioSrc, playAudio, setAudioVolume, startAutoplay]);
+  }, [audioSrc, canAutoplay, playAudio, setAudioVolume, startAutoplay]);
+
+  useEffect(() => {
+    if (!canAutoplay) return;
+    const audio = audioRef.current;
+    if (!audio || status !== "ready") return;
+    void startAutoplay(audio);
+  }, [canAutoplay, status, startAutoplay]);
+
+  useEffect(() => {
+    if (!listenForEnter) return;
+
+    const onSiteEnter = () => {
+      const audio = audioRef.current;
+      if (!audio) return;
+      userPausedRef.current = false;
+      void playAudio(audio);
+    };
+
+    window.addEventListener(ENTER_EVENT, onSiteEnter);
+    return () => window.removeEventListener(ENTER_EVENT, onSiteEnter);
+  }, [listenForEnter, playAudio]);
 
   const progressMax = Math.max(duration, 0.01);
   const isReady = status === "ready";
 
   return (
-    <div className="music-player">
+    <div
+      className={`music-player${hidden ? " music-player--hidden" : ""}`}
+    >
       <audio ref={audioRef} src={audioSrc} preload="auto" playsInline />
 
       <div className="music-player-cover">

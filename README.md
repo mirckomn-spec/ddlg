@@ -36,21 +36,9 @@ Copie `.env.example` para `.env` e **nunca** commite o `.env`.
 
 ### 1. Vídeo de fundo (importante)
 
-O arquivo `public/abstract-waves.mp4` tem ~**287 MB**. O GitHub bloqueia arquivos acima de **100 MB** sem [Git LFS](https://git-lfs.github.com/).
+O vídeo de fundo fica em `public/ABSTRATO.mp4` (~25 MB) e é servido pelo próprio site em `/ABSTRATO.mp4`.
 
-**Opção A — Git LFS (recomendado para manter o vídeo no repo):**
-
-```bash
-git lfs install
-git add .gitattributes
-git add public/abstract-waves.mp4
-```
-
-**Opção B — Vídeo hospedado fora (sem LFS):**
-
-1. Suba o `.mp4` em um CDN (Cloudinary, Bunny, etc.)
-2. Na Vercel, adicione: `NEXT_PUBLIC_BACKGROUND_VIDEO_URL=https://.../seu-video.mp4`
-3. Remova ou não commite `public/abstract-waves.mp4`
+Se trocar por um arquivo **maior que 100 MB**, use [Git LFS](https://git-lfs.github.com/) ou hospede fora e defina `NEXT_PUBLIC_BACKGROUND_VIDEO_URL` na Vercel.
 
 ### 2. Criar o repositório
 
@@ -107,7 +95,7 @@ src/
     discord-presence.ts
     roblox.ts
 public/
-  abstract-waves.mp4   # fundo (Git LFS se >100MB)
+  ABSTRATO.mp4         # fundo do site
   music/               # faixa do player
 ```
 
