@@ -2,8 +2,10 @@
 
 import { musicPlayer } from "@/lib/config";
 import {
+  forwardRef,
   useCallback,
   useEffect,
+  useImperativeHandle,
   useRef,
   useState,
   type CSSProperties,
@@ -11,15 +13,13 @@ import {
 
 const DEFAULT_VOLUME = 0.425;
 const VOLUME_STORAGE_KEY = "ddlg-music-volume";
-const ENTER_EVENT = "ddlg-enter";
+
+export type MusicPlayerHandle = {
+  playFromUserGesture: () => void;
+};
 
 type MusicPlayerProps = {
-  /** Escuta clique na tela de entrada (gesto do usuário) */
-  listenForEnter?: boolean;
-  /** Permite autoplay após entrar no site */
-  canAutoplay?: boolean;
-  /** Esconde o player até entrar */
-  hidden?: boolean;
+  visible?: boolean;
 };
 
 function readStoredVolume(): number {
@@ -39,327 +39,327 @@ function formatTime(seconds: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-export default function MusicPlayer({
-  listenForEnter = false,
-  canAutoplay = true,
-  hidden = false,
-}: MusicPlayerProps) {
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const userPausedRef = useRef(false);
-  const volumeRef = useRef(DEFAULT_VOLUME);
+const MusicPlayer = forwardRef<MusicPlayerHandle, MusicPlayerProps>(
+  function MusicPlayer({ visible = false }, ref) {
+    const audioRef = useRef<HTMLAudioElement>(null);
+    const userPausedRef = useRef(false);
+    const volumeRef = useRef(DEFAULT_VOLUME);
+    const listenersBoundRef = useRef(false);
 
-  const [volume, setVolume] = useState(DEFAULT_VOLUME);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+    const [volume, setVolume] = useState(DEFAULT_VOLUME);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
+    const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
 
-  const audioSrc = musicPlayer.src;
+    const audioSrc = musicPlayer.src;
 
-  const displayTitle = musicPlayer.artist
-    ? `${musicPlayer.artist} – ${musicPlayer.title}`
-    : musicPlayer.title;
+    const displayTitle = musicPlayer.artist
+      ? `${musicPlayer.artist} – ${musicPlayer.title}`
+      : musicPlayer.title;
 
-  const setAudioVolume = useCallback((audio: HTMLAudioElement) => {
-    audio.muted = false;
-    audio.volume = volumeRef.current;
-  }, []);
+    const setAudioVolume = useCallback((audio: HTMLAudioElement) => {
+      audio.muted = false;
+      audio.volume = volumeRef.current;
+    }, []);
 
-  const playAudio = useCallback(async (audio: HTMLAudioElement) => {
-    setAudioVolume(audio);
+    const playAudio = useCallback(
+      async (audio: HTMLAudioElement) => {
+        setAudioVolume(audio);
 
-    try {
-      await audio.play();
-      return true;
-    } catch {
-      try {
-        audio.muted = true;
-        await audio.play();
-        audio.muted = false;
-        audio.volume = volumeRef.current;
-        return !audio.paused;
-      } catch {
-        audio.muted = false;
-        audio.volume = volumeRef.current;
-        return false;
-      }
-    }
-  }, [setAudioVolume]);
-
-  const startAutoplay = useCallback(
-    async (audio: HTMLAudioElement) => {
-      if (userPausedRef.current || !audio.paused) return;
-
-      for (let i = 0; i < 12; i += 1) {
-        if (userPausedRef.current) return;
-        if (audio.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) {
-          if (await playAudio(audio)) return;
+        try {
+          await audio.play();
+          return true;
+        } catch {
+          try {
+            audio.muted = true;
+            await audio.play();
+            audio.muted = false;
+            audio.volume = volumeRef.current;
+            return !audio.paused;
+          } catch {
+            audio.muted = false;
+            audio.volume = volumeRef.current;
+            return false;
+          }
         }
-        await new Promise((r) => setTimeout(r, 250));
-      }
-    },
-    [playAudio],
-  );
+      },
+      [setAudioVolume],
+    );
 
-  const togglePlay = useCallback(async () => {
-    const audio = audioRef.current;
-    if (!audio || status === "error") return;
-
-    if (!audio.paused) {
-      userPausedRef.current = true;
-      audio.pause();
-      setIsPlaying(false);
-      return;
-    }
-
-    userPausedRef.current = false;
-    const ok = await playAudio(audio);
-    if (!ok && audio.readyState < HTMLMediaElement.HAVE_FUTURE_DATA) {
-      audio.load();
-      await new Promise((r) => setTimeout(r, 300));
-      await playAudio(audio);
-    }
-  }, [playAudio, status]);
-
-  const handleVolumeChange = useCallback(
-    (
-      e:
-        | React.ChangeEvent<HTMLInputElement>
-        | React.FormEvent<HTMLInputElement>,
-    ) => {
-      const value = Number((e.target as HTMLInputElement).value);
-      volumeRef.current = value;
-      setVolume(value);
-
-      const audio = audioRef.current;
-      if (audio) {
-        audio.muted = false;
-        audio.volume = value;
-      }
-
-      try {
-        localStorage.setItem(VOLUME_STORAGE_KEY, String(value));
-      } catch {
-        /* indisponível */
-      }
-    },
-    [],
-  );
-
-  const handleSeek = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement> | React.FormEvent<HTMLInputElement>) => {
+    const playFromUserGesture = useCallback(() => {
       const audio = audioRef.current;
       if (!audio) return;
-      const value = Number((e.target as HTMLInputElement).value);
-      audio.currentTime = value;
-      setCurrentTime(value);
-    },
-    [],
-  );
 
-  useEffect(() => {
-    volumeRef.current = readStoredVolume();
-    setVolume(volumeRef.current);
-  }, []);
-
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    userPausedRef.current = false;
-    setStatus("loading");
-
-    const onReady = () => {
-      if (Number.isFinite(audio.duration) && audio.duration > 0) {
-        setDuration(audio.duration);
-      }
-      setStatus("ready");
-      if (canAutoplay) {
-        void startAutoplay(audio);
-      }
-    };
-
-    const onTimeUpdate = () => setCurrentTime(audio.currentTime);
-    const onPlay = () => {
-      setAudioVolume(audio);
-      setIsPlaying(true);
-    };
-    const onPause = () => setIsPlaying(false);
-    const onEnded = () => {
-      setIsPlaying(false);
-      setCurrentTime(0);
-    };
-    const onError = () => setStatus("error");
-    const onCanPlay = () => onReady();
-
-    audio.addEventListener("loadedmetadata", onReady);
-    audio.addEventListener("canplay", onCanPlay);
-    audio.addEventListener("canplaythrough", onCanPlay);
-    audio.addEventListener("timeupdate", onTimeUpdate);
-    audio.addEventListener("play", onPlay);
-    audio.addEventListener("pause", onPause);
-    audio.addEventListener("ended", onEnded);
-    audio.addEventListener("error", onError);
-
-    setAudioVolume(audio);
-    audio.load();
-
-    if (audio.readyState >= HTMLMediaElement.HAVE_METADATA) {
-      onReady();
-    }
-
-    return () => {
-      audio.removeEventListener("loadedmetadata", onReady);
-      audio.removeEventListener("canplay", onCanPlay);
-      audio.removeEventListener("canplaythrough", onCanPlay);
-      audio.removeEventListener("timeupdate", onTimeUpdate);
-      audio.removeEventListener("play", onPlay);
-      audio.removeEventListener("pause", onPause);
-      audio.removeEventListener("ended", onEnded);
-      audio.removeEventListener("error", onError);
-    };
-  }, [audioSrc, canAutoplay, playAudio, setAudioVolume, startAutoplay]);
-
-  useEffect(() => {
-    if (!canAutoplay) return;
-    const audio = audioRef.current;
-    if (!audio || status !== "ready") return;
-    void startAutoplay(audio);
-  }, [canAutoplay, status, startAutoplay]);
-
-  useEffect(() => {
-    if (!listenForEnter) return;
-
-    const onSiteEnter = () => {
-      const audio = audioRef.current;
-      if (!audio) return;
       userPausedRef.current = false;
-      void playAudio(audio);
-    };
+      audio.preload = "auto";
 
-    window.addEventListener(ENTER_EVENT, onSiteEnter);
-    return () => window.removeEventListener(ENTER_EVENT, onSiteEnter);
-  }, [listenForEnter, playAudio]);
+      const attempt = () => void playAudio(audio);
 
-  const progressMax = Math.max(duration, 0.01);
-  const isReady = status === "ready";
+      if (audio.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) {
+        attempt();
+        return;
+      }
 
-  return (
-    <div
-      className={`music-player${hidden ? " music-player--hidden" : ""}`}
-    >
-      <audio ref={audioRef} src={audioSrc} preload="auto" playsInline />
+      if (audio.networkState === HTMLMediaElement.NETWORK_EMPTY) {
+        audio.load();
+      }
 
-      <div className="music-player-cover">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={musicPlayer.cover} alt={`Capa — ${musicPlayer.title}`} />
-      </div>
+      audio.addEventListener("canplay", attempt, { once: true });
+    }, [playAudio]);
 
-      <div className="music-player-panel">
-        <div className="music-player-header">
-          <div className="music-player-meta">
-            <span className="music-player-status">
-              {status === "error"
-                ? "erro ao carregar"
-                : isPlaying
-                  ? musicPlayer.statusLabel
-                  : isReady
-                    ? "pausado"
-                    : "carregando..."}
-            </span>
-            <p className="music-player-track">{displayTitle}</p>
-          </div>
+    useImperativeHandle(ref, () => ({ playFromUserGesture }), [playFromUserGesture]);
 
-          <div
-            className={`music-player-visualizer${isPlaying ? " is-active" : ""}`}
-            aria-hidden="true"
-          >
-            {[3, 6, 9, 5, 11, 7, 10, 4].map((h, i) => (
-              <span key={i} style={{ "--h": `${h}px` } as CSSProperties} />
-            ))}
-          </div>
+    const togglePlay = useCallback(async () => {
+      const audio = audioRef.current;
+      if (!audio || status === "error") return;
+
+      if (!audio.paused) {
+        userPausedRef.current = true;
+        audio.pause();
+        setIsPlaying(false);
+        return;
+      }
+
+      userPausedRef.current = false;
+      const ok = await playAudio(audio);
+      if (!ok && audio.readyState < HTMLMediaElement.HAVE_FUTURE_DATA) {
+        audio.load();
+        audio.addEventListener(
+          "canplay",
+          () => {
+            void playAudio(audio);
+          },
+          { once: true },
+        );
+      }
+    }, [playAudio, status]);
+
+    const handleVolumeChange = useCallback(
+      (
+        e:
+          | React.ChangeEvent<HTMLInputElement>
+          | React.FormEvent<HTMLInputElement>,
+      ) => {
+        const value = Number((e.target as HTMLInputElement).value);
+        volumeRef.current = value;
+        setVolume(value);
+
+        const audio = audioRef.current;
+        if (audio) {
+          audio.muted = false;
+          audio.volume = value;
+        }
+
+        try {
+          localStorage.setItem(VOLUME_STORAGE_KEY, String(value));
+        } catch {
+          /* indisponível */
+        }
+      },
+      [],
+    );
+
+    const handleSeek = useCallback(
+      (e: React.ChangeEvent<HTMLInputElement> | React.FormEvent<HTMLInputElement>) => {
+        const audio = audioRef.current;
+        if (!audio) return;
+        const value = Number((e.target as HTMLInputElement).value);
+        audio.currentTime = value;
+        setCurrentTime(value);
+      },
+      [],
+    );
+
+    useEffect(() => {
+      volumeRef.current = readStoredVolume();
+      setVolume(volumeRef.current);
+    }, []);
+
+    useEffect(() => {
+      if (!visible) return;
+
+      const audio = audioRef.current;
+      if (!audio || listenersBoundRef.current) return;
+
+      listenersBoundRef.current = true;
+      setAudioVolume(audio);
+
+      const markReady = () => {
+        if (Number.isFinite(audio.duration) && audio.duration > 0) {
+          setDuration(audio.duration);
+        }
+        setStatus("ready");
+      };
+
+      let lastUiTick = 0;
+      const onTimeUpdate = () => {
+        const now = performance.now();
+        if (now - lastUiTick < 250) return;
+        lastUiTick = now;
+        setCurrentTime(audio.currentTime);
+      };
+
+      const onPlay = () => {
+        setAudioVolume(audio);
+        setIsPlaying(true);
+      };
+      const onPause = () => setIsPlaying(false);
+      const onEnded = () => {
+        setIsPlaying(false);
+        setCurrentTime(0);
+      };
+      const onError = () => setStatus("error");
+
+      audio.addEventListener("loadedmetadata", markReady);
+      audio.addEventListener("canplay", markReady);
+      audio.addEventListener("timeupdate", onTimeUpdate);
+      audio.addEventListener("play", onPlay);
+      audio.addEventListener("pause", onPause);
+      audio.addEventListener("ended", onEnded);
+      audio.addEventListener("error", onError);
+
+      if (audio.readyState >= HTMLMediaElement.HAVE_METADATA) {
+        markReady();
+      }
+
+      return () => {
+        listenersBoundRef.current = false;
+        audio.removeEventListener("loadedmetadata", markReady);
+        audio.removeEventListener("canplay", markReady);
+        audio.removeEventListener("timeupdate", onTimeUpdate);
+        audio.removeEventListener("play", onPlay);
+        audio.removeEventListener("pause", onPause);
+        audio.removeEventListener("ended", onEnded);
+        audio.removeEventListener("error", onError);
+      };
+    }, [visible, setAudioVolume]);
+
+    const progressMax = Math.max(duration, 0.01);
+    const isReady = status === "ready";
+
+    return (
+      <div className={`music-player${visible ? "" : " music-player--hidden"}`}>
+        <audio
+          ref={audioRef}
+          src={audioSrc}
+          preload="none"
+          playsInline
+        />
+
+        <div className="music-player-cover">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={musicPlayer.cover} alt={`Capa — ${musicPlayer.title}`} />
         </div>
 
-        <div className="music-player-controls">
-          <button
-            type="button"
-            className="music-player-play"
-            onClick={() => void togglePlay()}
-            disabled={status === "error"}
-            aria-label={isPlaying ? "Pausar" : "Tocar"}
-          >
-            {status === "loading" ? (
-              <span className="music-player-spinner" />
-            ) : isPlaying ? (
-              <PauseIcon />
-            ) : (
-              <PlayIcon />
-            )}
-          </button>
+        <div className="music-player-panel">
+          <div className="music-player-header">
+            <div className="music-player-meta">
+              <span className="music-player-status">
+                {status === "error"
+                  ? "erro ao carregar"
+                  : isPlaying
+                    ? musicPlayer.statusLabel
+                    : isReady
+                      ? "pausado"
+                      : "carregando..."}
+              </span>
+              <p className="music-player-track">{displayTitle}</p>
+            </div>
 
-          <div className="music-player-progress-wrap">
             <div
-              className="music-player-progress-track"
-              style={
-                {
-                  "--progress": `${duration > 0 ? (currentTime / duration) * 100 : 0}%`,
-                } as CSSProperties
-              }
+              className={`music-player-visualizer${isPlaying ? " is-active" : ""}`}
+              aria-hidden="true"
             >
-              <div className="music-player-progress-fill" />
+              {[3, 6, 9, 5, 11, 7, 10, 4].map((h, i) => (
+                <span key={i} style={{ "--h": `${h}px` } as CSSProperties} />
+              ))}
+            </div>
+          </div>
+
+          <div className="music-player-controls">
+            <button
+              type="button"
+              className="music-player-play"
+              onClick={() => void togglePlay()}
+              disabled={status === "error"}
+              aria-label={isPlaying ? "Pausar" : "Tocar"}
+            >
+              {status === "loading" ? (
+                <span className="music-player-spinner" />
+              ) : isPlaying ? (
+                <PauseIcon />
+              ) : (
+                <PlayIcon />
+              )}
+            </button>
+
+            <div className="music-player-progress-wrap">
               <div
-                className="music-player-progress-thumb"
-                style={{
-                  left: `${duration > 0 ? (currentTime / duration) * 100 : 0}%`,
-                }}
+                className="music-player-progress-track"
+                style={
+                  {
+                    "--progress": `${duration > 0 ? (currentTime / duration) * 100 : 0}%`,
+                  } as CSSProperties
+                }
+              >
+                <div className="music-player-progress-fill" />
+                <div
+                  className="music-player-progress-thumb"
+                  style={{
+                    left: `${duration > 0 ? (currentTime / duration) * 100 : 0}%`,
+                  }}
+                />
+              </div>
+              <input
+                type="range"
+                className="music-player-progress-input"
+                min={0}
+                max={progressMax}
+                step={0.01}
+                value={Math.min(currentTime, progressMax)}
+                onChange={handleSeek}
+                onInput={handleSeek}
+                disabled={!isReady}
+                aria-label="Posição da música"
               />
             </div>
-            <input
-              type="range"
-              className="music-player-progress-input"
-              min={0}
-              max={progressMax}
-              step={0.01}
-              value={Math.min(currentTime, progressMax)}
-              onChange={handleSeek}
-              onInput={handleSeek}
-              disabled={!isReady}
-              aria-label="Posição da música"
-            />
+
+            <span className="music-player-time">
+              {formatTime(currentTime)} / {formatTime(duration)}
+            </span>
           </div>
 
-          <span className="music-player-time">
-            {formatTime(currentTime)} / {formatTime(duration)}
-          </span>
-        </div>
-
-        <div className="music-player-volume">
-          <VolumeIcon level={volume} />
-          <div className="music-player-volume-track-wrap">
-            <div
-              className="music-player-volume-track"
-              style={{ "--volume": `${volume * 100}%` } as CSSProperties}
-            >
-              <div className="music-player-volume-fill" />
+          <div className="music-player-volume">
+            <VolumeIcon level={volume} />
+            <div className="music-player-volume-track-wrap">
+              <div
+                className="music-player-volume-track"
+                style={{ "--volume": `${volume * 100}%` } as CSSProperties}
+              >
+                <div className="music-player-volume-fill" />
+              </div>
+              <input
+                type="range"
+                className="music-player-volume-input"
+                min={0}
+                max={1}
+                step={0.01}
+                value={volume}
+                onChange={handleVolumeChange}
+                onInput={handleVolumeChange}
+                disabled={status === "error"}
+                aria-label="Volume"
+              />
             </div>
-            <input
-              type="range"
-              className="music-player-volume-input"
-              min={0}
-              max={1}
-              step={0.01}
-              value={volume}
-              onChange={handleVolumeChange}
-              onInput={handleVolumeChange}
-              disabled={status === "error"}
-              aria-label="Volume"
-            />
           </div>
         </div>
       </div>
-    </div>
-  );
-}
+    );
+  },
+);
+
+export default MusicPlayer;
 
 function VolumeIcon({ level }: { level: number }) {
   const muted = level <= 0.01;

@@ -1,38 +1,38 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState, type ReactNode } from "react";
 import Background from "@/components/Background";
 import EntryGate from "@/components/EntryGate";
-import MusicPlayer from "@/components/MusicPlayer";
-import ProfileCard from "@/components/ProfileCard";
+import MusicPlayer, { type MusicPlayerHandle } from "@/components/MusicPlayer";
 import SideDecorations from "@/components/SideDecorations";
 
-const ENTER_EVENT = "ddlg-enter";
+type HomeClientProps = {
+  children: ReactNode;
+};
 
-export default function HomeClient() {
+export default function HomeClient({ children }: HomeClientProps) {
   const [entered, setEntered] = useState(false);
-  const [exiting, setExiting] = useState(false);
+  const musicRef = useRef<MusicPlayerHandle>(null);
 
   const handleEnter = useCallback(() => {
-    window.dispatchEvent(new CustomEvent(ENTER_EVENT));
-    setExiting(true);
-    window.setTimeout(() => {
-      setEntered(true);
-    }, 520);
+    musicRef.current?.playFromUserGesture();
+    setEntered(true);
   }, []);
 
   return (
-    <div className={`site-shell${exiting ? " site-shell--exiting" : ""}`}>
-      <Background />
+    <div className="site-shell">
+      <Background active={entered} />
 
       {!entered && <EntryGate onEnter={handleEnter} />}
 
-      <div className={entered ? "site-content" : "site-content site-content--locked"}>
-        <SideDecorations />
-        <ProfileCard />
-      </div>
+      {entered && (
+        <div className="site-content">
+          <SideDecorations />
+          {children}
+        </div>
+      )}
 
-      <MusicPlayer listenForEnter={!entered} canAutoplay={entered} hidden={!entered} />
+      <MusicPlayer ref={musicRef} visible={entered} />
     </div>
   );
 }

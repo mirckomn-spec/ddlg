@@ -6,9 +6,7 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  background: rgba(0, 0, 0, 0.82);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: #000000;
   animation: entryGateIn 0.5s ease;
 }
 
@@ -76,23 +74,6 @@
     opacity: 0.85;
     transform: translateY(4px);
   }
-}
-
-.site-shell--exiting .entry-gate {
-  animation: entryGateOut 0.55s ease forwards;
-  pointer-events: none;
-}
-
-@keyframes entryGateOut {
-  to {
-    opacity: 0;
-    visibility: hidden;
-  }
-}
-
-.site-content--locked {
-  visibility: hidden;
-  pointer-events: none;
 }
 
 .site-content {
