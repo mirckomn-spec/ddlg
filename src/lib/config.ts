@@ -1,8 +1,8 @@
 export const musicPlayer = {
-  src: "/music/rockstar-made-playboi-carti.mp3",
-  title: "Rockstar Made - Playboi Carti",
+  src: "/music/dj-transtorno-mental.mp3",
+  title: "OUTSIDE - DJ TRANSTORNO MENTAL",
   artist: "",
-  cover: "https://i.imgur.com/SM8qwCH.png",
+  cover: "https://i.imgur.com/GJf0QYj.png",
   statusLabel: "tocando agora",
 } as const;
 
