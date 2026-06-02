@@ -17,7 +17,11 @@ export const sideDecorations = {
   },
   right: {
     src: "https://i.ibb.co/fVNCYMQk/6uu65u56u565u6-Photoroom.png",
-    alt: "Decoração lateral direita",
+    alt: "Decoração lateral direita — boneca",
+  },
+  rightBelow: {
+    src: "https://i.imgur.com/1s27jNk.png",
+    alt: "Decoração lateral direita — banco",
   },
 } as const;
 
