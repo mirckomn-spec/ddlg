@@ -231,6 +231,11 @@
   filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.4));
 }
 
+.social-icon-btn--whatsapp:hover {
+  color: #25d366;
+  filter: drop-shadow(0 0 8px rgba(37, 211, 102, 0.5));
+}
+
 .roblox-skin {
   display: flex;
   flex-direction: column;

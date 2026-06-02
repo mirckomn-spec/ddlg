@@ -25,7 +25,7 @@ export const sideDecorations = {
   },
 } as const;
 
-export type SocialPlatform = "instagram" | "twitter" | "tiktok";
+export type SocialPlatform = "instagram" | "twitter" | "tiktok" | "whatsapp";
 
 export type SocialLink = {
   platform: SocialPlatform;
@@ -62,9 +62,9 @@ export const users: UserProfile[] = [
     robloxId: 7289259995,
     links: [
       {
-        platform: "instagram",
-        url: "https://www.instagram.com/sickboyx_x",
-        label: "Instagram",
+        platform: "whatsapp",
+        url: "https://wa.me/5511920901579",
+        label: "WhatsApp",
       },
     ],
   },
@@ -81,7 +81,7 @@ export const users: UserProfile[] = [
       },
       {
         platform: "tiktok",
-        url: "https://www.tiktok.com/@dienaltic",
+        url: "https://www.tiktok.com/@nnaltic",
         label: "TikTok",
       },
       {
