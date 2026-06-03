@@ -37,6 +37,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# contador de visualizações (armazenamento local)
+.data/
+
 # typescript
 *.tsbuildinfo
 

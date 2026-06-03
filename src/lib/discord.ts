@@ -51,15 +51,14 @@ export async function fetchDiscordUser(
     });
 
     if (!response.ok) {
-      console.warn(
-        `[discord] GET /users/${userId} → ${response.status} ${response.statusText}`,
-      );
+      if (process.env.NODE_ENV === "development") {
+        console.warn(`[discord] Falha ao buscar usuário (${response.status})`);
+      }
       return null;
     }
 
     return (await response.json()) as DiscordUser;
-  } catch (error) {
-    console.warn(`[discord] Erro ao buscar usuário ${userId}:`, error);
+  } catch {
     return null;
   }
 }
@@ -67,17 +66,13 @@ export async function fetchDiscordUser(
 export async function fetchDiscordAvatarUrl(
   userId: string,
   noCache = false,
-): Promise<{ avatarUrl: string; fromApi: boolean; error?: string }> {
+): Promise<{ avatarUrl: string; fromApi: boolean }> {
   const user = await fetchDiscordUser(userId, noCache);
 
   if (!user) {
-    const token = getDiscordBotToken();
     return {
       avatarUrl: defaultAvatarUrl(userId),
       fromApi: false,
-      error: token
-        ? "Não foi possível buscar o usuário na API do Discord."
-        : "DISCORD_BOT_TOKEN não configurado no arquivo .env",
     };
   }
 

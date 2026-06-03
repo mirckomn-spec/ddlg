@@ -1,0 +1,35 @@
+.view-counter {
+  position: fixed;
+  bottom: 1.25rem;
+  left: 50%;
+  z-index: 6;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.45);
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.65);
+  pointer-events: none;
+  user-select: none;
+}
+
+.view-counter-value {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.view-counter-label {
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 640px) {
+  .view-counter {
+    bottom: 5.5rem;
+    font-size: 0.65rem;
+  }
+}

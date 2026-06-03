@@ -2,12 +2,15 @@ import { users, type UserProfile } from "./config";
 import { fetchDiscordAvatarUrl } from "./discord";
 import { fetchRobloxProfile, type RobloxProfile } from "./roblox";
 
-export type EnrichedUser = UserProfile & {
+export type PublicUser = {
+  id: string;
+  name: string;
   discordAvatarUrl: string;
+  links: UserProfile["links"];
   roblox: RobloxProfile | null;
 };
 
-export async function fetchEnrichedUsers(): Promise<EnrichedUser[]> {
+export async function fetchEnrichedUsers(): Promise<PublicUser[]> {
   return Promise.all(
     users.map(async (user) => {
       const [discordResult, roblox] = await Promise.all([
@@ -16,8 +19,10 @@ export async function fetchEnrichedUsers(): Promise<EnrichedUser[]> {
       ]);
 
       return {
-        ...user,
+        id: user.id,
+        name: user.name,
         discordAvatarUrl: discordResult.avatarUrl,
+        links: user.links,
         roblox,
       };
     }),

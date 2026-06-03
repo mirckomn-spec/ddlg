@@ -206,7 +206,6 @@ async function waitForBotReady(timeoutMs = 25_000): Promise<boolean> {
 async function startBot(): Promise<void> {
   const token = getDiscordBotToken();
   if (!token) {
-    console.warn("[discord-presence] DISCORD_BOT_TOKEN ausente.");
     return;
   }
 
@@ -247,13 +246,11 @@ async function startBot(): Promise<void> {
     const guild = client.guilds.cache.get(activeGuildId!);
     if (guild) {
       syncFromPresenceCache(guild);
-      console.log(
-        `[discord-presence] Bot online — servidor ${activeGuildId} (${guild.presences.cache.size} presenças no cache)`,
-      );
-    } else {
-      console.warn(
-        `[discord-presence] Bot online mas servidor ${activeGuildId} não encontrado. O bot está no servidor?`,
-      );
+      if (process.env.NODE_ENV === "development") {
+        console.log("[discord-presence] Bot online.");
+      }
+    } else if (process.env.NODE_ENV === "development") {
+      console.warn("[discord-presence] Servidor configurado não encontrado.");
     }
     botReady = true;
   });
@@ -272,8 +269,7 @@ export async function ensureDiscordBot(): Promise<void> {
       .then(async () => {
         await waitForBotReady();
       })
-      .catch((error) => {
-        console.error("[discord-presence] Falha ao iniciar:", error);
+      .catch(() => {
         botStarting = null;
       });
   }

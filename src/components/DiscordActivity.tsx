@@ -1,34 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { refreshPresence, type PresenceUpdate } from "@/app/actions/discord";
 import ActivityIcon from "./ActivityIcon";
 
 const POLL_INTERVAL_MS = 15_000;
 
-type PresenceActivity = {
-  kind: string;
-  text: string;
-  iconUrl: string | null;
-};
-
-type UserPresence = {
-  status: string;
-  activity: PresenceActivity | null;
-};
-
-type PresenceApiResponse = {
-  presence: UserPresence | null;
-  ready: boolean;
-};
-
-type ActivityState = {
-  text: string;
-  iconUrl: string | null;
-  kind: string;
-};
+type ActivityState = PresenceUpdate;
 
 type DiscordActivityProps = {
-  discordId: string;
+  userId: string;
   placement?: "default" | "header";
 };
 
@@ -38,7 +19,7 @@ function activitySnapshot(activity: ActivityState | null): string {
 }
 
 export default function DiscordActivity({
-  discordId,
+  userId,
   placement = "default",
 }: DiscordActivityProps) {
   const [activity, setActivity] = useState<ActivityState | null>(null);
@@ -46,19 +27,9 @@ export default function DiscordActivity({
 
   const isHeader = placement === "header";
 
-  const refreshPresence = useCallback(async () => {
+  const refresh = useCallback(async () => {
     try {
-      const response = await fetch(`/api/discord/presence/${discordId}`, {
-        cache: "no-store",
-      });
-
-      if (!response.ok) return;
-
-      const data = (await response.json()) as PresenceApiResponse;
-
-      if (!data.ready) return;
-
-      const next = data.presence?.activity;
+      const next = await refreshPresence(userId);
 
       if (!next?.text) {
         if (lastSnapshotRef.current !== "") {
@@ -68,36 +39,27 @@ export default function DiscordActivity({
         return;
       }
 
-      const snapshot = activitySnapshot({
-        text: next.text,
-        iconUrl: next.iconUrl ?? null,
-        kind: next.kind,
-      });
-
+      const snapshot = activitySnapshot(next);
       if (snapshot === lastSnapshotRef.current) return;
 
       lastSnapshotRef.current = snapshot;
-      setActivity({
-        text: next.text,
-        iconUrl: next.iconUrl ?? null,
-        kind: next.kind,
-      });
+      setActivity(next);
     } catch {
       /* mantém último estado */
     }
-  }, [discordId]);
+  }, [userId]);
 
   useEffect(() => {
-    refreshPresence();
+    refresh();
 
-    const fastBoot = setInterval(refreshPresence, 2000);
+    const fastBoot = setInterval(refresh, 2000);
     const stopFast = setTimeout(() => clearInterval(fastBoot), 30_000);
 
-    const interval = setInterval(refreshPresence, POLL_INTERVAL_MS);
+    const interval = setInterval(refresh, POLL_INTERVAL_MS);
 
     const onVisible = () => {
       if (document.visibilityState === "visible") {
-        refreshPresence();
+        refresh();
       }
     };
 
@@ -109,7 +71,7 @@ export default function DiscordActivity({
       clearInterval(interval);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [refreshPresence]);
+  }, [refresh]);
 
   if (!activity) return null;
 

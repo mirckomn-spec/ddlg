@@ -1,11 +1,11 @@
-import type { EnrichedUser } from "@/lib/users";
+import type { PublicUser } from "@/lib/users";
 import DiscordActivity from "./DiscordActivity";
 import DiscordAvatar from "./DiscordAvatar";
 import RobloxAvatar from "./RobloxAvatar";
 import SocialLinks from "./SocialLinks";
 
 type UserCardProps = {
-  user: EnrichedUser;
+  user: PublicUser;
   index: number;
 };
 
@@ -20,11 +20,11 @@ export default function UserCard({ user, index }: UserCardProps) {
   return (
     <article className={`profile-card animate-fade-in-up ${delayClass}`}>
       <div className="profile-card-top">
-        <DiscordActivity discordId={user.discordId} placement="header" />
+        <DiscordActivity userId={user.id} placement="header" />
         <div className="profile-avatar-wrap" data-cursor-hover>
           <div className="profile-avatar-ring" aria-hidden="true" />
           <DiscordAvatar
-            discordId={user.discordId}
+            userId={user.id}
             name={user.name}
             initialUrl={user.discordAvatarUrl}
           />

@@ -1,13 +1,13 @@
+import { backgroundVideo } from "@/lib/config";
 import VideoBackground from "./VideoBackground";
 
-type BackgroundProps = {
-  active?: boolean;
-};
+const videoSrc =
+  process.env.BACKGROUND_VIDEO_URL?.trim() || backgroundVideo.src;
 
-export default function Background({ active = false }: BackgroundProps) {
+export default function Background() {
   return (
     <>
-      {active ? <VideoBackground /> : <div className="bg-idle" aria-hidden="true" />}
+      <VideoBackground src={videoSrc} />
       <div className="bg-vignette" aria-hidden="true" />
     </>
   );
