@@ -1,3 +1,6 @@
+/** Contador de visualizações começa neste número e sobe a partir daqui */
+export const siteViewCountBase = 554;
+
 export const musicPlayer = {
   src: "/music/dj-transtorno-mental.mp3",
   title: "OUTSIDE - DJ TRANSTORNO MENTAL",
