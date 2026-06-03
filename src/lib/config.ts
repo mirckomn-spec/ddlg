@@ -10,7 +10,8 @@ export const musicPlayer = {
 } as const;
 
 export const backgroundVideo = {
-  src: "/ABSTRATO.mp4",
+  src: "/bg-wave.mp4",
+  fallbackSrc: "/ABSTRATO.mp4",
 } as const;
 
 export const sideDecorations = {

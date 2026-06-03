@@ -25,6 +25,7 @@ export default function HomeClient({
   const viewRecordedRef = useRef(false);
 
   const handleEnter = useCallback(() => {
+    window.dispatchEvent(new CustomEvent("ddlg-enter"));
     musicRef.current?.playFromUserGesture();
     setEntered(true);
 

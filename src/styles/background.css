@@ -12,7 +12,6 @@
   overflow: hidden;
   pointer-events: none;
   background: #000000;
-  contain: strict;
   transform: translateZ(0);
 }
 

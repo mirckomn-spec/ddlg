@@ -7,7 +7,10 @@ const videoSrc =
 export default function Background() {
   return (
     <>
-      <VideoBackground src={videoSrc} />
+      <VideoBackground
+        src={videoSrc}
+        fallbackSrc={backgroundVideo.fallbackSrc}
+      />
       <div className="bg-vignette" aria-hidden="true" />
     </>
   );
